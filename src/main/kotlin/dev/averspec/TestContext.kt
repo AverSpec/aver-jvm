@@ -17,6 +17,7 @@ open class TestContext(
         domain, adapter, protocolCtx, traceEntries,
         "when", setOf(MarkerKind.ACTION), calledMarkers, telemetryCollector
     )
+    val act get() = `when`
     val then = NarrativeProxy(
         domain, adapter, protocolCtx, traceEntries,
         "then", setOf(MarkerKind.ASSERTION), calledMarkers, telemetryCollector

@@ -17,7 +17,7 @@ class DomainFilterAcceptanceTest {
         val s = Suite(AverCoreDomain.d, adapter, envLookup = { env[it] })
 
         var ran = false
-        s.test("should be skipped") {
+        s.run {
             ran = true
         }
         assertFalse(ran, "test should have been skipped by AVER_DOMAIN filter")
@@ -30,7 +30,7 @@ class DomainFilterAcceptanceTest {
         val s = Suite(AverCoreDomain.d, adapter, envLookup = { env[it] })
 
         var ran = false
-        s.test("should run") { ctx ->
+        s.run { ctx ->
             ctx.given(AverCoreDomain.defineDomain, DomainSpec(
                 name = "filter-run",
                 actions = listOf("ping"),

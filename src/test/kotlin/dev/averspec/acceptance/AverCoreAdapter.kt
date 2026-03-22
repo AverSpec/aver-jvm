@@ -81,7 +81,7 @@ fun buildAverCoreAdapter(): Adapter {
         when (marker.kind) {
             MarkerKind.ACTION -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.`when`(marker as ActionMarker<Any?>, op.payload)
+                ctx.act(marker as ActionMarker<Any?>, op.payload)
             }
             MarkerKind.QUERY -> {
                 @Suppress("UNCHECKED_CAST")
@@ -188,7 +188,7 @@ fun buildAverCoreAdapter(): Adapter {
         when (marker.kind) {
             MarkerKind.ACTION -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.`when`(marker as ActionMarker<Any?>, op.payload)
+                ctx.act(marker as ActionMarker<Any?>, op.payload)
             }
             MarkerKind.QUERY -> {
                 @Suppress("UNCHECKED_CAST")
@@ -240,7 +240,7 @@ fun buildAverCoreAdapter(): Adapter {
         val marker = d.markers[op.markerName] ?: throw IllegalStateException("No marker '${op.markerName}'")
         if (marker.kind == MarkerKind.ACTION) {
             @Suppress("UNCHECKED_CAST")
-            ctx.`when`(marker as ActionMarker<Any?>, op.payload)
+            ctx.act(marker as ActionMarker<Any?>, op.payload)
         }
     }
 
@@ -325,7 +325,7 @@ fun buildAverCoreAdapter(): Adapter {
         for ((name, marker) in d.markers) {
             if (marker.kind == MarkerKind.ACTION) {
                 @Suppress("UNCHECKED_CAST")
-                ctx.`when`(marker as ActionMarker<Any?>, "test")
+                ctx.act(marker as ActionMarker<Any?>, "test")
             }
         }
     }
@@ -495,15 +495,15 @@ fun buildAverCoreAdapter(): Adapter {
                     when (marker) {
                         is ActionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.`when`(marker as ActionMarker<Any?>, "test")
+                            ctx.act(marker as ActionMarker<Any?>, "test")
                         }
                         is AssertionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.`when`(marker as AssertionMarker<Any?>, "test")
+                            ctx.act(marker as AssertionMarker<Any?>, "test")
                         }
                         is QueryMarker<*, *> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.`when`(marker as QueryMarker<Any?, Any?>, "test")
+                            ctx.act(marker as QueryMarker<Any?, Any?>, "test")
                         }
                     }
                 }
@@ -672,7 +672,7 @@ fun buildAverCoreAdapter(): Adapter {
         try {
             val fakeMarker = ActionMarker<Any?>(check.markerName, d.name)
             @Suppress("UNCHECKED_CAST")
-            ctx.`when`(fakeMarker, "test")
+            ctx.act(fakeMarker, "test")
             throw AssertionError("Expected error for missing marker '${check.markerName}'")
         } catch (e: IllegalStateException) {
             if (check.expectedMatch !in (e.message ?: "")) {

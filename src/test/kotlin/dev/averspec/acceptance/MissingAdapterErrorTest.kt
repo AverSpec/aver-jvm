@@ -15,21 +15,19 @@ class MissingAdapterErrorTest {
     private val s = suite(AverCoreDomain.d, adapter)
 
     @Test
-    fun `missing adapter error includes registered names`() {
-        s.test("missing adapter") { ctx ->
-            // Define a domain so we have something in the workbench
-            ctx.given(AverCoreDomain.defineDomain, DomainSpec(
-                name = "known-domain",
-                actions = listOf("ping"),
-                queries = emptyList(),
-                assertions = emptyList()
-            ))
-            // Create adapter to verify the domain works
-            ctx.given(AverCoreDomain.createAdapter, AdapterSpec())
-            // Call operation to verify dispatch works
-            ctx.`when`(AverCoreDomain.callOperation, OperationCall(markerName = "ping"))
-            ctx.then(AverCoreDomain.traceHasLength, TraceLengthCheck(expected = 1))
-        }
+    fun `missing adapter error includes registered names`() = s.run { ctx ->
+        // Define a domain so we have something in the workbench
+        ctx.given(AverCoreDomain.defineDomain, DomainSpec(
+            name = "known-domain",
+            actions = listOf("ping"),
+            queries = emptyList(),
+            assertions = emptyList()
+        ))
+        // Create adapter to verify the domain works
+        ctx.given(AverCoreDomain.createAdapter, AdapterSpec())
+        // Call operation to verify dispatch works
+        ctx.act(AverCoreDomain.callOperation, OperationCall(markerName = "ping"))
+        ctx.then(AverCoreDomain.traceHasLength, TraceLengthCheck(expected = 1))
     }
 
     @Test
@@ -39,7 +37,7 @@ class MissingAdapterErrorTest {
 
         // This test verifies that calling an unknown marker produces a clear error
         var errorCaught = false
-        s.test("unknown marker") { ctx ->
+        s.run { ctx ->
             ctx.given(AverCoreDomain.defineDomain, DomainSpec(
                 name = "err-known",
                 actions = listOf("real_action"),
@@ -48,7 +46,7 @@ class MissingAdapterErrorTest {
             ))
             ctx.given(AverCoreDomain.createAdapter, AdapterSpec())
             try {
-                ctx.`when`(AverCoreDomain.callOperation, OperationCall(markerName = "nonexistent"))
+                ctx.act(AverCoreDomain.callOperation, OperationCall(markerName = "nonexistent"))
             } catch (e: Exception) {
                 assertTrue(e.message?.contains("nonexistent") == true,
                     "Error should mention the missing marker name")

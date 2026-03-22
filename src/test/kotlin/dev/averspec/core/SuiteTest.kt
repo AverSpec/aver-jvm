@@ -50,7 +50,7 @@ class SuiteTest {
     fun `when dispatches action`() {
         val (s, addItem, hasCount) = buildTodoSuite()
         s.test("when dispatch") { ctx ->
-            ctx.`when`(addItem, "item 1")
+            ctx.act(addItem, "item 1")
             ctx.then(hasCount, 1)
         }
     }
@@ -130,7 +130,7 @@ class SuiteTest {
         val s = suite(d, adapter)
         s.test("reject") { ctx ->
             assertThrows(IllegalArgumentException::class.java) {
-                ctx.`when`(hasCount, 1)
+                ctx.act(hasCount, 1)
             }
         }
     }

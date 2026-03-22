@@ -6,6 +6,12 @@ class Suite(
     val teardownFailureMode: TeardownFailureMode = TeardownFailureMode.WARN,
     internal val envLookup: (String) -> String? = { System.getenv(it) }
 ) {
+    /**
+     * Run a test without a redundant name. Use this when the JUnit @Test
+     * function name is the only name you need.
+     */
+    fun run(block: (TestContext) -> Unit) = test("", block)
+
     fun test(name: String, block: (TestContext) -> Unit) {
         // Domain filter: skip when AVER_DOMAIN is set and doesn't match.
         val domainFilter = envLookup("AVER_DOMAIN")
