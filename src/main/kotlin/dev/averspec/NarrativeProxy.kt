@@ -7,7 +7,8 @@ class NarrativeProxy(
     private val traceEntries: MutableList<TraceEntry>,
     private val category: String,
     private val allowedKinds: Set<MarkerKind>,
-    private val calledMarkers: MutableSet<String>
+    private val calledMarkers: MutableSet<String>,
+    private val telemetryCollector: TelemetryCollector? = null
 ) {
     operator fun <P> invoke(marker: ActionMarker<P>, payload: P) {
         require(marker.kind in allowedKinds) {
@@ -20,6 +21,7 @@ class NarrativeProxy(
         val start = System.nanoTime()
         var status = "pass"
         var error: String? = null
+        var telemetryResult: TelemetryMatchResult? = null
         try {
             fn(protocolCtx, payload)
         } catch (e: Throwable) {
@@ -28,6 +30,9 @@ class NarrativeProxy(
             throw e
         } finally {
             val durationMs = (System.nanoTime() - start) / 1_000_000.0
+            if (marker.telemetry != null && telemetryCollector != null) {
+                telemetryResult = matchTelemetry(marker.telemetry!!, telemetryCollector)
+            }
             traceEntries.add(TraceEntry(
                 kind = marker.kind.name.lowercase(),
                 category = category,
@@ -35,7 +40,8 @@ class NarrativeProxy(
                 payload = payload,
                 status = status,
                 durationMs = durationMs,
-                error = error
+                error = error,
+                telemetry = telemetryResult
             ))
             calledMarkers.add(marker.name)
         }
@@ -85,6 +91,7 @@ class NarrativeProxy(
         var status = "pass"
         var error: String? = null
         var result: R? = null
+        var telemetryResult: TelemetryMatchResult? = null
         try {
             result = fn(protocolCtx, payload)
             return result
@@ -94,6 +101,9 @@ class NarrativeProxy(
             throw e
         } finally {
             val durationMs = (System.nanoTime() - start) / 1_000_000.0
+            if (marker.telemetry != null && telemetryCollector != null) {
+                telemetryResult = matchTelemetry(marker.telemetry!!, telemetryCollector)
+            }
             traceEntries.add(TraceEntry(
                 kind = marker.kind.name.lowercase(),
                 category = category,
@@ -102,7 +112,8 @@ class NarrativeProxy(
                 status = status,
                 durationMs = durationMs,
                 result = result,
-                error = error
+                error = error,
+                telemetry = telemetryResult
             ))
             calledMarkers.add(marker.name)
         }
