@@ -12,9 +12,8 @@ fun buildBoardUnitAdapter(): Adapter {
         onAction(dom.addCard) { board: Board, title: String ->
             board.addCard(title)
         }
-        onAction(dom.moveCard) { board: Board, payload: Pair<String, String> ->
-            val (cardId, column) = payload
-            board.moveCard(cardId, column)
+        onAction(dom.moveCard) { board: Board, payload: MoveCardPayload ->
+            board.moveCard(payload.cardId, payload.column)
         }
         onAction(dom.removeCard) { board: Board, cardId: String ->
             board.removeCard(cardId)
@@ -22,8 +21,8 @@ fun buildBoardUnitAdapter(): Adapter {
         onQuery(dom.getCard) { board: Board, cardId: String ->
             board.getCard(cardId)
         }
-        onQuery(dom.listCards) { board: Board, column: String? ->
-            board.listCards(column)
+        onQuery(dom.listCards) { board: Board, _: Unit ->
+            board.listCards()
         }
         onQuery(dom.columnCount) { board: Board, column: String ->
             board.columnCount(column)
@@ -32,11 +31,10 @@ fun buildBoardUnitAdapter(): Adapter {
             val actual = board.listCards().size
             if (actual != expected) throw AssertionError("Expected $expected total cards, got $actual")
         }
-        onAssertion(dom.cardIsInColumn) { board: Board, payload: Pair<String, String> ->
-            val (cardId, expectedColumn) = payload
-            val card = board.getCard(cardId) ?: throw AssertionError("Card '$cardId' not found")
-            if (card.column != expectedColumn) {
-                throw AssertionError("Card '$cardId' is in '${card.column}', expected '$expectedColumn'")
+        onAssertion(dom.cardIsInColumn) { board: Board, check: CardColumnCheck ->
+            val card = board.getCard(check.cardId) ?: throw AssertionError("Card '${check.cardId}' not found")
+            if (card.column != check.column) {
+                throw AssertionError("Card '${check.cardId}' is in '${card.column}', expected '${check.column}'")
             }
         }
     }

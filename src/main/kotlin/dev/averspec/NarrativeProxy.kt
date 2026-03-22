@@ -79,6 +79,8 @@ class NarrativeProxy(
         }
     }
 
+    operator fun <R> invoke(marker: QueryMarker<Unit, R>): R = invoke(marker, Unit)
+
     operator fun <P, R> invoke(marker: QueryMarker<P, R>, payload: P): R {
         require(marker.kind in allowedKinds) {
             "Cannot use ${marker.kind} marker '${marker.name}' in '$category' block"

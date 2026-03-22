@@ -22,24 +22,24 @@ class BoardHttpTest {
     @Test
     fun `new card starts in todo via http`() = s.run { ctx ->
         ctx.given(BoardDomain.addCard, "Write tests")
-        val cards = ctx.query(BoardDomain.listCards, null as String?)
+        val cards = ctx.query(BoardDomain.listCards)
         val card = cards.first()
-        ctx.then(BoardDomain.cardIsInColumn, Pair(card.id, "todo"))
+        ctx.then(BoardDomain.cardIsInColumn, CardColumnCheck(card.id, "todo"))
     }
 
     @Test
     fun `move card via http`() = s.run { ctx ->
         ctx.given(BoardDomain.addCard, "Deploy service")
-        val cards = ctx.query(BoardDomain.listCards, null as String?)
+        val cards = ctx.query(BoardDomain.listCards)
         val card = cards.first()
-        ctx.act(BoardDomain.moveCard, Pair(card.id, "doing"))
-        ctx.then(BoardDomain.cardIsInColumn, Pair(card.id, "doing"))
+        ctx.act(BoardDomain.moveCard, MoveCardPayload(card.id, "doing"))
+        ctx.then(BoardDomain.cardIsInColumn, CardColumnCheck(card.id, "doing"))
     }
 
     @Test
     fun `remove card via http`() = s.run { ctx ->
         ctx.given(BoardDomain.addCard, "Temp task")
-        val cards = ctx.query(BoardDomain.listCards, null as String?)
+        val cards = ctx.query(BoardDomain.listCards)
         ctx.act(BoardDomain.removeCard, cards.first().id)
         ctx.then(BoardDomain.hasTotalCards, 0)
     }
@@ -47,7 +47,7 @@ class BoardHttpTest {
     @Test
     fun `query card by id via http`() = s.run { ctx ->
         ctx.given(BoardDomain.addCard, "Important task")
-        val cards = ctx.query(BoardDomain.listCards, null as String?)
+        val cards = ctx.query(BoardDomain.listCards)
         val card = ctx.query(BoardDomain.getCard, cards.first().id)
         assertNotNull(card)
         assertEquals("Important task", card!!.title)
@@ -65,8 +65,8 @@ class BoardHttpTest {
     fun `multiple cards across columns via http`() = s.run { ctx ->
         ctx.given(BoardDomain.addCard, "Task A")
         ctx.given(BoardDomain.addCard, "Task B")
-        val cards = ctx.query(BoardDomain.listCards, null as String?)
-        ctx.act(BoardDomain.moveCard, Pair(cards[0].id, "doing"))
+        val cards = ctx.query(BoardDomain.listCards)
+        ctx.act(BoardDomain.moveCard, MoveCardPayload(cards[0].id, "doing"))
         val todoCount = ctx.query(BoardDomain.columnCount, "todo")
         val doingCount = ctx.query(BoardDomain.columnCount, "doing")
         assertEquals(1, todoCount)

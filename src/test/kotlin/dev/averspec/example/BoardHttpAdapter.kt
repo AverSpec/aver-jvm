@@ -72,9 +72,8 @@ fun buildBoardHttpAdapter(): Adapter {
             val id = extractField(response, "id")
             ctx.lastCreatedCardId = id
         }
-        onAction(dom.moveCard) { ctx: HttpBoardCtx, payload: Pair<String, String> ->
-            val (cardId, column) = payload
-            ctx.put("/cards/$cardId/move", """{"column":"$column"}""")
+        onAction(dom.moveCard) { ctx: HttpBoardCtx, payload: MoveCardPayload ->
+            ctx.put("/cards/${payload.cardId}/move", """{"column":"${payload.column}"}""")
         }
         onAction(dom.removeCard) { ctx: HttpBoardCtx, cardId: String ->
             ctx.delete("/cards/$cardId")
@@ -84,9 +83,8 @@ fun buildBoardHttpAdapter(): Adapter {
             if (response.isBlank()) null
             else parseCard(response)
         }
-        onQuery(dom.listCards) { ctx: HttpBoardCtx, column: String? ->
-            val path = if (column != null) "/cards?column=$column" else "/cards"
-            val response = ctx.get(path)
+        onQuery(dom.listCards) { ctx: HttpBoardCtx, _: Unit ->
+            val response = ctx.get("/cards")
             parseCardList(response)
         }
         onQuery(dom.columnCount) { ctx: HttpBoardCtx, column: String ->
@@ -101,12 +99,11 @@ fun buildBoardHttpAdapter(): Adapter {
                 throw AssertionError("Expected $expected total cards, got ${cards.size}")
             }
         }
-        onAssertion(dom.cardIsInColumn) { ctx: HttpBoardCtx, payload: Pair<String, String> ->
-            val (cardId, expectedColumn) = payload
-            val response = ctx.get("/cards/$cardId")
+        onAssertion(dom.cardIsInColumn) { ctx: HttpBoardCtx, check: CardColumnCheck ->
+            val response = ctx.get("/cards/${check.cardId}")
             val card = parseCard(response)
-            if (card.column != expectedColumn) {
-                throw AssertionError("Card '$cardId' is in '${card.column}', expected '$expectedColumn'")
+            if (card.column != check.column) {
+                throw AssertionError("Card '${check.cardId}' is in '${card.column}', expected '${check.column}'")
             }
         }
     }
