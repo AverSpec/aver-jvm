@@ -3,9 +3,22 @@ package dev.averspec
 class Suite(
     val domain: Domain,
     val adapter: Adapter,
-    val teardownFailureMode: TeardownFailureMode = TeardownFailureMode.WARN
+    val teardownFailureMode: TeardownFailureMode = TeardownFailureMode.WARN,
+    internal val envLookup: (String) -> String? = { System.getenv(it) }
 ) {
     fun test(name: String, block: (TestContext) -> Unit) {
+        // Domain filter: skip when AVER_DOMAIN is set and doesn't match.
+        val domainFilter = envLookup("AVER_DOMAIN")
+        if (domainFilter != null && domainFilter != domain.name) {
+            return
+        }
+
+        // Adapter filter: skip when AVER_ADAPTER is set and doesn't match.
+        val adapterFilter = envLookup("AVER_ADAPTER")
+        if (adapterFilter != null && adapterFilter != adapter.protocol.name) {
+            return
+        }
+
         @Suppress("UNCHECKED_CAST")
         val protocol = adapter.protocol as Protocol<Any>
         val ctx = protocol.setup()
