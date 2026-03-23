@@ -13,16 +13,16 @@ class TelemetryAcceptanceTest {
 
     @Test
     fun `telemetry span matched on action`() = s.run { ctx ->
-        ctx.given(AverCoreDomain.defineTelemetryDomain, TelemetryDomainSpec(
+        ctx.Given(AverCoreDomain.defineTelemetryDomain, TelemetryDomainSpec(
             name = "tel-match",
             actions = listOf("create_order"),
             spanNames = listOf("order.create")
         ))
-        ctx.given(AverCoreDomain.createTelemetryAdapter, TelemetryAdapterSpecPayload())
-        ctx.act(AverCoreDomain.callTelemetryOperation, OperationCall(
+        ctx.Given(AverCoreDomain.createTelemetryAdapter, TelemetryAdapterSpecPayload())
+        ctx.When(AverCoreDomain.callTelemetryOperation, OperationCall(
             markerName = "create_order", payload = "order-1"
         ))
-        ctx.then(AverCoreDomain.telemetrySpanMatched, TelemetrySpanCheckPayload(
+        ctx.Then(AverCoreDomain.telemetrySpanMatched, TelemetrySpanCheckPayload(
             index = 0,
             expectedSpan = "order.create",
             matched = true
@@ -31,22 +31,22 @@ class TelemetryAcceptanceTest {
 
     @Test
     fun `multiple telemetry spans matched`() = s.run { ctx ->
-        ctx.given(AverCoreDomain.defineTelemetryDomain, TelemetryDomainSpec(
+        ctx.Given(AverCoreDomain.defineTelemetryDomain, TelemetryDomainSpec(
             name = "tel-multi",
             actions = listOf("start_flow", "complete_flow"),
             spanNames = listOf("flow.start", "flow.complete")
         ))
-        ctx.given(AverCoreDomain.createTelemetryAdapter, TelemetryAdapterSpecPayload())
-        ctx.act(AverCoreDomain.callTelemetryOperation, OperationCall(
+        ctx.Given(AverCoreDomain.createTelemetryAdapter, TelemetryAdapterSpecPayload())
+        ctx.When(AverCoreDomain.callTelemetryOperation, OperationCall(
             markerName = "start_flow", payload = "flow-1"
         ))
-        ctx.act(AverCoreDomain.callTelemetryOperation, OperationCall(
+        ctx.When(AverCoreDomain.callTelemetryOperation, OperationCall(
             markerName = "complete_flow", payload = "flow-1"
         ))
-        ctx.then(AverCoreDomain.telemetrySpanMatched, TelemetrySpanCheckPayload(
+        ctx.Then(AverCoreDomain.telemetrySpanMatched, TelemetrySpanCheckPayload(
             index = 0, expectedSpan = "flow.start", matched = true
         ))
-        ctx.then(AverCoreDomain.telemetrySpanMatched, TelemetrySpanCheckPayload(
+        ctx.Then(AverCoreDomain.telemetrySpanMatched, TelemetrySpanCheckPayload(
             index = 1, expectedSpan = "flow.complete", matched = true
         ))
     }

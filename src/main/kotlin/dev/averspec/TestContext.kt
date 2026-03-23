@@ -9,20 +9,19 @@ open class TestContext(
     private val traceEntries = mutableListOf<TraceEntry>()
     private val calledMarkers = mutableSetOf<String>()
 
-    val given = NarrativeProxy(
+    val Given = NarrativeProxy(
         domain, adapter, protocolCtx, traceEntries,
         "given", setOf(MarkerKind.ACTION, MarkerKind.ASSERTION), calledMarkers, telemetryCollector
     )
-    val `when` = NarrativeProxy(
+    val When = NarrativeProxy(
         domain, adapter, protocolCtx, traceEntries,
         "when", setOf(MarkerKind.ACTION), calledMarkers, telemetryCollector
     )
-    val act get() = `when`
-    val then = NarrativeProxy(
+    val Then = NarrativeProxy(
         domain, adapter, protocolCtx, traceEntries,
         "then", setOf(MarkerKind.ASSERTION), calledMarkers, telemetryCollector
     )
-    val query = NarrativeProxy(
+    val Query = NarrativeProxy(
         domain, adapter, protocolCtx, traceEntries,
         "query", setOf(MarkerKind.QUERY), calledMarkers, telemetryCollector
     )

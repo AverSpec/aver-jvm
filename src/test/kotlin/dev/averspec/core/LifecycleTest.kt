@@ -39,7 +39,7 @@ class LifecycleTest {
             onAssertion(check) { _: Ctx, _: Int -> throw AssertionError("fail") }
         }
         val s = suite(d, adapter)
-        try { s.test("t") { ctx -> ctx.then(check, 1) } } catch (_: Throwable) {}
+        try { s.test("t") { ctx -> ctx.Then(check, 1) } } catch (_: Throwable) {}
         assertTrue(failCalled)
     }
 
@@ -58,7 +58,7 @@ class LifecycleTest {
             onAssertion(check) { _: Ctx, _: Int -> throw AssertionError("fail") }
         }
         val s = suite(d, adapter)
-        try { s.test("t") { ctx -> ctx.then(check, 1) } } catch (_: Throwable) {}
+        try { s.test("t") { ctx -> ctx.Then(check, 1) } } catch (_: Throwable) {}
         assertTrue(endCalled)
     }
 

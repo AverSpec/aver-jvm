@@ -30,8 +30,8 @@ class SuiteTest {
         val (s, addItem, hasCount) = buildTodoSuite()
         var ran = false
         s.test("add an item") { ctx ->
-            ctx.given(addItem, "buy milk")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "buy milk")
+            ctx.Then(hasCount, 1)
             ran = true
         }
         assertTrue(ran)
@@ -41,8 +41,8 @@ class SuiteTest {
     fun `given dispatches action`() {
         val (s, addItem, hasCount) = buildTodoSuite()
         s.test("dispatch") { ctx ->
-            ctx.given(addItem, "item 1")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "item 1")
+            ctx.Then(hasCount, 1)
         }
     }
 
@@ -50,8 +50,8 @@ class SuiteTest {
     fun `when dispatches action`() {
         val (s, addItem, hasCount) = buildTodoSuite()
         s.test("when dispatch") { ctx ->
-            ctx.act(addItem, "item 1")
-            ctx.then(hasCount, 1)
+            ctx.When(addItem, "item 1")
+            ctx.Then(hasCount, 1)
         }
     }
 
@@ -59,8 +59,8 @@ class SuiteTest {
     fun `trace records entries`() {
         val (s, addItem, hasCount) = buildTodoSuite()
         s.test("trace test") { ctx ->
-            ctx.given(addItem, "first")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "first")
+            ctx.Then(hasCount, 1)
             val trace = ctx.trace()
             assertEquals(2, trace.size)
             assertEquals("given", trace[0].category)
@@ -74,7 +74,7 @@ class SuiteTest {
     fun `trace records pass status`() {
         val (s, addItem, _) = buildTodoSuite()
         s.test("status") { ctx ->
-            ctx.given(addItem, "x")
+            ctx.Given(addItem, "x")
             assertEquals("pass", ctx.trace()[0].status)
         }
     }
@@ -84,7 +84,7 @@ class SuiteTest {
         val (s, _, hasCount) = buildTodoSuite()
         s.test("fail status") { ctx ->
             try {
-                ctx.then(hasCount, 99)
+                ctx.Then(hasCount, 99)
             } catch (_: Throwable) {}
             assertEquals("fail", ctx.trace()[0].status)
         }
@@ -94,7 +94,7 @@ class SuiteTest {
     fun `trace records duration`() {
         val (s, addItem, _) = buildTodoSuite()
         s.test("duration") { ctx ->
-            ctx.given(addItem, "x")
+            ctx.Given(addItem, "x")
             assertTrue(ctx.trace()[0].durationMs >= 0.0)
         }
     }
@@ -112,7 +112,7 @@ class SuiteTest {
         val s = suite(d, adapter)
         s.test("reject") { ctx ->
             assertThrows(IllegalArgumentException::class.java) {
-                ctx.then(addItem, "nope")
+                ctx.Then(addItem, "nope")
             }
         }
     }
@@ -130,7 +130,7 @@ class SuiteTest {
         val s = suite(d, adapter)
         s.test("reject") { ctx ->
             assertThrows(IllegalArgumentException::class.java) {
-                ctx.act(hasCount, 1)
+                ctx.When(hasCount, 1)
             }
         }
     }
@@ -150,8 +150,8 @@ class SuiteTest {
         }
         val s = suite(d, adapter)
         s.test("query") { ctx ->
-            ctx.given(addItem, "milk")
-            val items = ctx.query(listItems, Unit)
+            ctx.Given(addItem, "milk")
+            val items = ctx.Query(listItems, Unit)
             assertEquals(listOf("milk"), items)
         }
     }
@@ -160,11 +160,11 @@ class SuiteTest {
     fun `each test gets fresh context`() {
         val (s, addItem, hasCount) = buildTodoSuite()
         s.test("first") { ctx ->
-            ctx.given(addItem, "a")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "a")
+            ctx.Then(hasCount, 1)
         }
         s.test("second") { ctx ->
-            ctx.then(hasCount, 0)
+            ctx.Then(hasCount, 0)
         }
     }
 
@@ -172,7 +172,7 @@ class SuiteTest {
     fun `trace includes payload`() {
         val (s, addItem, _) = buildTodoSuite()
         s.test("payload") { ctx ->
-            ctx.given(addItem, "buy eggs")
+            ctx.Given(addItem, "buy eggs")
             assertEquals("buy eggs", ctx.trace()[0].payload)
         }
     }
@@ -181,7 +181,7 @@ class SuiteTest {
     fun `trace records kind for action`() {
         val (s, addItem, _) = buildTodoSuite()
         s.test("kind") { ctx ->
-            ctx.given(addItem, "x")
+            ctx.Given(addItem, "x")
             assertEquals("action", ctx.trace()[0].kind)
         }
     }
@@ -190,7 +190,7 @@ class SuiteTest {
     fun `trace records kind for assertion`() {
         val (s, _, hasCount) = buildTodoSuite()
         s.test("assertion kind") { ctx ->
-            ctx.then(hasCount, 0)
+            ctx.Then(hasCount, 0)
             assertEquals("assertion", ctx.trace()[0].kind)
         }
     }
@@ -208,7 +208,7 @@ class SuiteTest {
         val s = suite(d, adapter)
         s.test("reject") { ctx ->
             assertThrows(IllegalArgumentException::class.java) {
-                ctx.query(addItem, "nope")
+                ctx.Query(addItem, "nope")
             }
         }
     }
@@ -217,7 +217,7 @@ class SuiteTest {
     fun `given allows assertion markers`() {
         val (s, _, hasCount) = buildTodoSuite()
         s.test("given assertion") { ctx ->
-            assertDoesNotThrow { ctx.given(hasCount, 0) }
+            assertDoesNotThrow { ctx.Given(hasCount, 0) }
         }
     }
 
@@ -225,8 +225,8 @@ class SuiteTest {
     fun `calledMarkerNames tracks invocations`() {
         val (s, addItem, hasCount) = buildTodoSuite()
         s.test("called markers") { ctx ->
-            ctx.given(addItem, "x")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "x")
+            ctx.Then(hasCount, 1)
             assertTrue(ctx.calledMarkerNames().contains("add item"))
             assertTrue(ctx.calledMarkerNames().contains("has count"))
         }
@@ -264,7 +264,7 @@ class SuiteTest {
         }
         val s = suite(d, adapter)
         try {
-            s.test("t") { ctx -> ctx.then(check, 1) }
+            s.test("t") { ctx -> ctx.Then(check, 1) }
         } catch (_: Throwable) {}
         assertTrue(tornDown)
     }

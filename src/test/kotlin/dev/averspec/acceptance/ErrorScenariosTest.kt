@@ -13,14 +13,14 @@ class ErrorScenariosTest {
 
     @Test
     fun `missing marker raises error`() = s.run { ctx ->
-        ctx.given(AverCoreDomain.defineDomain, DomainSpec(
+        ctx.Given(AverCoreDomain.defineDomain, DomainSpec(
             name = "err-missing",
             actions = listOf("real_action"),
             queries = emptyList(),
             assertions = emptyList()
         ))
-        ctx.given(AverCoreDomain.createAdapter, AdapterSpec())
-        ctx.then(AverCoreDomain.missingMarkerRaisesError, MissingMarkerErrorCheckPayload(
+        ctx.Given(AverCoreDomain.createAdapter, AdapterSpec())
+        ctx.Then(AverCoreDomain.missingMarkerRaisesError, MissingMarkerErrorCheckPayload(
             proxyName = "when",
             markerName = "nonexistent_marker",
             expectedMatch = "nonexistent_marker"
@@ -29,14 +29,14 @@ class ErrorScenariosTest {
 
     @Test
     fun `wrong proxy raises type error`() = s.run { ctx ->
-        ctx.given(AverCoreDomain.defineDomain, DomainSpec(
+        ctx.Given(AverCoreDomain.defineDomain, DomainSpec(
             name = "err-wrong-proxy",
             actions = listOf("do_thing"),
             queries = emptyList(),
             assertions = listOf("verify_thing")
         ))
-        ctx.given(AverCoreDomain.createAdapter, AdapterSpec())
-        ctx.then(AverCoreDomain.proxyRejectsWrongKind, ProxyRestrictionCheck(
+        ctx.Given(AverCoreDomain.createAdapter, AdapterSpec())
+        ctx.Then(AverCoreDomain.proxyRejectsWrongKind, ProxyRestrictionCheck(
             proxyName = "when",
             markerName = "verify_thing"
         ))
@@ -44,14 +44,14 @@ class ErrorScenariosTest {
 
     @Test
     fun `incomplete adapter detected`() = s.run { ctx ->
-        ctx.given(AverCoreDomain.defineDomain, DomainSpec(
+        ctx.Given(AverCoreDomain.defineDomain, DomainSpec(
             name = "err-incomplete",
             actions = listOf("handle_this", "handle_that"),
             queries = listOf("fetch_status"),
             assertions = listOf("status_is_ok")
         ))
-        ctx.act(AverCoreDomain.createAdapter, AdapterSpec())
-        ctx.then(AverCoreDomain.adapterIsComplete, CompletenessCheck(
+        ctx.When(AverCoreDomain.createAdapter, AdapterSpec())
+        ctx.Then(AverCoreDomain.adapterIsComplete, CompletenessCheck(
             missing = listOf("handle_that", "fetch_status")
         ))
     }

@@ -16,28 +16,28 @@ class ExtendedDomainE2ETest {
     @Test
     fun `extended domain end-to-end in suite`() = s.run { ctx ->
         // Define a parent domain
-        ctx.given(AverCoreDomain.defineDomain, DomainSpec(
+        ctx.Given(AverCoreDomain.defineDomain, DomainSpec(
             name = "e2e-parent",
             actions = listOf("create_task", "delete_task"),
             queries = emptyList(),
             assertions = emptyList()
         ))
         // Extend with child markers
-        ctx.act(AverCoreDomain.extendDomain, ExtensionSpec(
+        ctx.When(AverCoreDomain.extendDomain, ExtensionSpec(
             childName = "e2e-child",
             newActions = listOf("show_spinner", "hide_spinner"),
             newQueries = emptyList(),
             newAssertions = emptyList()
         ))
         // Verify total marker count (parent + child)
-        ctx.then(AverCoreDomain.extensionMarkerCountIs, MarkerCountCheckPayload(expected = 4))
+        ctx.Then(AverCoreDomain.extensionMarkerCountIs, MarkerCountCheckPayload(expected = 4))
         // Verify parent is tracked
-        ctx.then(AverCoreDomain.hasParentDomain, "e2e-parent")
+        ctx.Then(AverCoreDomain.hasParentDomain, "e2e-parent")
         // Create adapter for the parent domain
-        ctx.given(AverCoreDomain.createAdapter, AdapterSpec())
+        ctx.Given(AverCoreDomain.createAdapter, AdapterSpec())
         // Call operations through the adapter
-        ctx.act(AverCoreDomain.callOperation, OperationCall(markerName = "create_task"))
+        ctx.When(AverCoreDomain.callOperation, OperationCall(markerName = "create_task"))
         // Verify trace recorded the operation
-        ctx.then(AverCoreDomain.traceHasLength, TraceLengthCheck(expected = 1))
+        ctx.Then(AverCoreDomain.traceHasLength, TraceLengthCheck(expected = 1))
     }
 }

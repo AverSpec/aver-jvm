@@ -128,7 +128,7 @@ class TelemetryTest {
         s.test("tel proxy") { ctx ->
             // Need a context with collector
             val telCtx = TestContext(d, adapter, protocol.setup(), collector)
-            telCtx.act(submit, "order-1")
+            telCtx.When(submit, "order-1")
             val trace = telCtx.trace()
             assertEquals(1, trace.size)
             assertNotNull(trace[0].telemetry)

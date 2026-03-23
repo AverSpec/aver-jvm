@@ -31,7 +31,7 @@ class DomainFilterAcceptanceTest {
 
         var ran = false
         s.run { ctx ->
-            ctx.given(AverCoreDomain.defineDomain, DomainSpec(
+            ctx.Given(AverCoreDomain.defineDomain, DomainSpec(
                 name = "filter-run",
                 actions = listOf("ping"),
                 queries = emptyList(),

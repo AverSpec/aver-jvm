@@ -77,8 +77,8 @@ class TraceFormatTest {
         val s = suite(d, adapter)
         val err = assertThrows(Throwable::class.java) {
             s.test("t") { ctx ->
-                ctx.given(addItem, "milk")
-                ctx.then(hasCount, 99)
+                ctx.Given(addItem, "milk")
+                ctx.Then(hasCount, 99)
             }
         }
         assertTrue(err.message!!.contains("Test steps"))

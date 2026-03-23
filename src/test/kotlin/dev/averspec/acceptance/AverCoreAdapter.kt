@@ -81,16 +81,16 @@ fun buildAverCoreAdapter(): Adapter {
         when (marker.kind) {
             MarkerKind.ACTION -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.act(marker as ActionMarker<Any?>, op.payload)
+                ctx.When(marker as ActionMarker<Any?>, op.payload)
             }
             MarkerKind.QUERY -> {
                 @Suppress("UNCHECKED_CAST")
-                val result = ctx.query(marker as QueryMarker<Any?, Any?>, op.payload)
+                val result = ctx.Query(marker as QueryMarker<Any?, Any?>, op.payload)
                 wb.lastQueryResults[op.markerName] = result
             }
             MarkerKind.ASSERTION -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.then(marker as AssertionMarker<Any?>, op.payload)
+                ctx.Then(marker as AssertionMarker<Any?>, op.payload)
             }
         }
     }
@@ -100,10 +100,10 @@ fun buildAverCoreAdapter(): Adapter {
         val d = wb.currentDomain!!
         val marker = d.markers[call.markerName] ?: throw IllegalStateException("No marker '${call.markerName}'")
         val proxy = when (call.proxyName) {
-            "given" -> ctx.given
-            "when" -> ctx.`when`
-            "then" -> ctx.then
-            "query" -> ctx.query
+            "given" -> ctx.Given
+            "when" -> ctx.When
+            "then" -> ctx.Then
+            "query" -> ctx.Query
             else -> throw IllegalArgumentException("Unknown proxy '${call.proxyName}'")
         }
         when (marker) {
@@ -139,7 +139,7 @@ fun buildAverCoreAdapter(): Adapter {
         // Copy existing trace by calling the original context operations
         try {
             @Suppress("UNCHECKED_CAST")
-            failingCtx.then(marker as AssertionMarker<Any?>, spec.payload)
+            failingCtx.Then(marker as AssertionMarker<Any?>, spec.payload)
         } catch (_: AssertionError) {
             // Expected
         }
@@ -188,15 +188,15 @@ fun buildAverCoreAdapter(): Adapter {
         when (marker.kind) {
             MarkerKind.ACTION -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.act(marker as ActionMarker<Any?>, op.payload)
+                ctx.When(marker as ActionMarker<Any?>, op.payload)
             }
             MarkerKind.QUERY -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.query(marker as QueryMarker<Any?, Any?>, op.payload)
+                ctx.Query(marker as QueryMarker<Any?, Any?>, op.payload)
             }
             MarkerKind.ASSERTION -> {
                 @Suppress("UNCHECKED_CAST")
-                ctx.then(marker as AssertionMarker<Any?>, op.payload)
+                ctx.Then(marker as AssertionMarker<Any?>, op.payload)
             }
         }
     }
@@ -240,7 +240,7 @@ fun buildAverCoreAdapter(): Adapter {
         val marker = d.markers[op.markerName] ?: throw IllegalStateException("No marker '${op.markerName}'")
         if (marker.kind == MarkerKind.ACTION) {
             @Suppress("UNCHECKED_CAST")
-            ctx.act(marker as ActionMarker<Any?>, op.payload)
+            ctx.When(marker as ActionMarker<Any?>, op.payload)
         }
     }
 
@@ -325,7 +325,7 @@ fun buildAverCoreAdapter(): Adapter {
         for ((name, marker) in d.markers) {
             if (marker.kind == MarkerKind.ACTION) {
                 @Suppress("UNCHECKED_CAST")
-                ctx.act(marker as ActionMarker<Any?>, "test")
+                ctx.When(marker as ActionMarker<Any?>, "test")
             }
         }
     }
@@ -495,15 +495,15 @@ fun buildAverCoreAdapter(): Adapter {
                     when (marker) {
                         is ActionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.act(marker as ActionMarker<Any?>, "test")
+                            ctx.When(marker as ActionMarker<Any?>, "test")
                         }
                         is AssertionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.act(marker as AssertionMarker<Any?>, "test")
+                            ctx.When(marker as AssertionMarker<Any?>, "test")
                         }
                         is QueryMarker<*, *> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.act(marker as QueryMarker<Any?, Any?>, "test")
+                            ctx.When(marker as QueryMarker<Any?, Any?>, "test")
                         }
                     }
                 }
@@ -511,15 +511,15 @@ fun buildAverCoreAdapter(): Adapter {
                     when (marker) {
                         is ActionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.then(marker as ActionMarker<Any?>, "test")
+                            ctx.Then(marker as ActionMarker<Any?>, "test")
                         }
                         is AssertionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.then(marker as AssertionMarker<Any?>, "test")
+                            ctx.Then(marker as AssertionMarker<Any?>, "test")
                         }
                         is QueryMarker<*, *> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.then(marker as QueryMarker<Any?, Any?>, "test")
+                            ctx.Then(marker as QueryMarker<Any?, Any?>, "test")
                         }
                     }
                 }
@@ -527,15 +527,15 @@ fun buildAverCoreAdapter(): Adapter {
                     when (marker) {
                         is ActionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.query(marker as ActionMarker<Any?>, "test")
+                            ctx.Query(marker as ActionMarker<Any?>, "test")
                         }
                         is AssertionMarker<*> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.query(marker as AssertionMarker<Any?>, "test")
+                            ctx.Query(marker as AssertionMarker<Any?>, "test")
                         }
                         is QueryMarker<*, *> -> {
                             @Suppress("UNCHECKED_CAST")
-                            ctx.query(marker as QueryMarker<Any?, Any?>, "test")
+                            ctx.Query(marker as QueryMarker<Any?, Any?>, "test")
                         }
                     }
                 }
@@ -672,7 +672,7 @@ fun buildAverCoreAdapter(): Adapter {
         try {
             val fakeMarker = ActionMarker<Any?>(check.markerName, d.name)
             @Suppress("UNCHECKED_CAST")
-            ctx.act(fakeMarker, "test")
+            ctx.When(fakeMarker, "test")
             throw AssertionError("Expected error for missing marker '${check.markerName}'")
         } catch (e: IllegalStateException) {
             if (check.expectedMatch !in (e.message ?: "")) {

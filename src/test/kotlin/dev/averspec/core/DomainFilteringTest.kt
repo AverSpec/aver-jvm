@@ -42,8 +42,8 @@ class DomainFilteringTest {
         val (s, addItem, hasCount) = buildSuite { env[it] }
         var ran = false
         s.test("should run") { ctx ->
-            ctx.given(addItem, "milk")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "milk")
+            ctx.Then(hasCount, 1)
             ran = true
         }
         assertTrue(ran, "test should have run because AVER_DOMAIN matches")
@@ -66,8 +66,8 @@ class DomainFilteringTest {
         val (s, addItem, hasCount) = buildSuite { env[it] }
         var ran = false
         s.test("should run") { ctx ->
-            ctx.given(addItem, "milk")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "milk")
+            ctx.Then(hasCount, 1)
             ran = true
         }
         assertTrue(ran, "test should have run because AVER_ADAPTER matches")
@@ -78,8 +78,8 @@ class DomainFilteringTest {
         val (s, addItem, hasCount) = buildSuite { null }
         var ran = false
         s.test("should run") { ctx ->
-            ctx.given(addItem, "milk")
-            ctx.then(hasCount, 1)
+            ctx.Given(addItem, "milk")
+            ctx.Then(hasCount, 1)
             ran = true
         }
         assertTrue(ran, "test should run when no filters are set")
