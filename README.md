@@ -18,29 +18,33 @@ dependencies {
 import dev.averspec.*
 import org.junit.jupiter.api.Test
 
-// Domain
-val d = Domain("task-board")
-val createTask = d.action<Map<String, String>>("create_task")
-val taskInStatus = d.assertion<Map<String, String>>("task_in_status")
+// 1. Define a domain with typed markers
+val d = domain("task-board") {
+    action<String>("add task")
+    assertion<Int>("has total tasks")
+}
 
-// Adapter
-val adapter = buildAdapter(d, UnitProtocol { mutableMapOf<String, String>() }) {
-    handle(createTask) { board, p -> board[p["title"]!!] = "backlog" }
-    handle(taskInStatus) { board, p ->
-        assert(board[p["title"]!!] == p["status"]!!)
+@Suppress("UNCHECKED_CAST")
+val addTask = d.markers["add task"] as ActionMarker<String>
+@Suppress("UNCHECKED_CAST")
+val hasTotalTasks = d.markers["has total tasks"] as AssertionMarker<Int>
+
+// 2. Implement an adapter that maps markers to real code
+val adapter = implement<MutableList<String>>(d, UnitProtocol { mutableListOf() }) {
+    onAction(addTask) { board, title -> board.add(title) }
+    onAssertion(hasTotalTasks) { board, expected ->
+        if (board.size != expected) throw AssertionError("Expected $expected tasks, got ${board.size}")
     }
 }
 
+// 3. Create a suite and write tests
 val s = suite(d, adapter)
 
-// Tests
 class TaskBoardTest {
     @Test
-    fun `create task with default status`() {
-        s.test("create task with default status") { ctx ->
-            ctx.given(createTask, mapOf("title" to "Fix bug"))
-            ctx.then(taskInStatus, mapOf("title" to "Fix bug", "status" to "backlog"))
-        }
+    fun `add a task to the board`() = s.run { ctx ->
+        ctx.Given(addTask, "Fix bug")
+        ctx.Then(hasTotalTasks, 1)
     }
 }
 ```
