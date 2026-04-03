@@ -23,7 +23,7 @@ data class SpanExpectation(
  * A single contract entry: one domain operation's expected telemetry.
  */
 data class ContractEntry(
-    val operationName: String,
+    val testName: String,
     val spans: List<SpanExpectation>
 )
 
@@ -31,7 +31,7 @@ data class ContractEntry(
  * A behavioral contract extracted from test telemetry.
  */
 data class BehavioralContract(
-    val domainName: String,
+    val domain: String,
     val entries: List<ContractEntry>
 )
 
@@ -88,25 +88,25 @@ fun extractContract(
             }
         }
         ContractEntry(
-            operationName = entry.name,
+            testName = entry.name,
             spans = listOf(SpanExpectation(name = telemetry.expected.span, attributes = attrs))
         )
     }
-    return BehavioralContract(domainName = domainName, entries = entries)
+    return BehavioralContract(domain = domainName, entries = entries)
 }
 
 /**
  * Write a contract to a JSON file.
  */
 fun writeContract(contract: BehavioralContract, dir: File): File {
-    val file = File(dir, "${contract.domainName}.contract.json")
+    val file = File(dir, "${contract.domain}.contract.json")
     val sb = StringBuilder()
     sb.appendLine("{")
-    sb.appendLine("""  "domainName": "${contract.domainName}",""")
+    sb.appendLine("""  "domain": "${contract.domain}",""")
     sb.appendLine("""  "entries": [""")
     contract.entries.forEachIndexed { i, entry ->
         sb.appendLine("    {")
-        sb.appendLine("""      "operationName": "${entry.operationName}",""")
+        sb.appendLine("""      "testName": "${entry.testName}",""")
         sb.appendLine("""      "spans": [""")
         entry.spans.forEachIndexed { j, span ->
             sb.appendLine("        {")
@@ -144,19 +144,19 @@ fun writeContract(contract: BehavioralContract, dir: File): File {
  */
 fun readContract(file: File): BehavioralContract {
     val text = file.readText()
-    // Simplified JSON parse: extract domainName and entries
-    val domainNameMatch = Regex(""""domainName"\s*:\s*"([^"]+)"""").find(text)
-        ?: throw IllegalStateException("No domainName in contract file")
+    // Simplified JSON parse: extract domain and entries
+    val domainNameMatch = Regex(""""domain"\s*:\s*"([^"]+)"""").find(text)
+        ?: throw IllegalStateException("No domain in contract file")
     val domainName = domainNameMatch.groupValues[1]
 
     val entries = mutableListOf<ContractEntry>()
-    val entryPattern = Regex(""""operationName"\s*:\s*"([^"]+)"""")
+    val entryPattern = Regex(""""testName"\s*:\s*"([^"]+)"""")
     val spanPattern = Regex(""""name"\s*:\s*"([^"]+)"""")
     val literalPattern = Regex(""""(\w[\w.]*?)"\s*:\s*\{\s*"kind"\s*:\s*"literal"\s*,\s*"value"\s*:\s*("([^"]*)"|([\d.]+))\s*\}""")
     val correlatedPattern = Regex(""""(\w[\w.]*?)"\s*:\s*\{\s*"kind"\s*:\s*"correlated"\s*,\s*"symbol"\s*:\s*"([^"]+)"\s*\}""")
 
     // Split by entry blocks
-    val entryBlocks = text.split(""""operationName"""").drop(1)
+    val entryBlocks = text.split(""""testName"""").drop(1)
     for (block in entryBlocks) {
         val opMatch = Regex(""":\s*"([^"]+)"""").find(block) ?: continue
         val opName = opMatch.groupValues[1]
@@ -183,10 +183,10 @@ fun readContract(file: File): BehavioralContract {
             }
             SpanExpectation(name = spanName, attributes = attrs)
         }
-        entries.add(ContractEntry(operationName = opName, spans = spans))
+        entries.add(ContractEntry(testName = opName, spans = spans))
     }
 
-    return BehavioralContract(domainName = domainName, entries = entries)
+    return BehavioralContract(domain = domainName, entries = entries)
 }
 
 /**

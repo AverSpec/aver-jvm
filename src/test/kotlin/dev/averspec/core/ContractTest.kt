@@ -20,9 +20,9 @@ class ContractTest {
         )
         val collector = InMemoryCollector()
         val contract = extractContract("test-domain", entries, collector)
-        assertEquals("test-domain", contract.domainName)
+        assertEquals("test-domain", contract.domain)
         assertEquals(1, contract.entries.size)
-        assertEquals("login", contract.entries[0].operationName)
+        assertEquals("login", contract.entries[0].testName)
         assertEquals("auth.login", contract.entries[0].spans[0].name)
     }
 
@@ -47,7 +47,7 @@ class ContractTest {
     @Test
     fun `verify contract passes on matching traces`() {
         val contract = BehavioralContract(
-            domainName = "test",
+            domain = "test",
             entries = listOf(
                 ContractEntry("login", listOf(SpanExpectation("auth.login")))
             )
@@ -63,7 +63,7 @@ class ContractTest {
     @Test
     fun `verify contract fails on missing span`() {
         val contract = BehavioralContract(
-            domainName = "test",
+            domain = "test",
             entries = listOf(
                 ContractEntry("login", listOf(SpanExpectation("auth.login"))),
                 ContractEntry("charge", listOf(SpanExpectation("payment.charge")))
@@ -80,7 +80,7 @@ class ContractTest {
     @Test
     fun `verify contract fails on literal mismatch`() {
         val contract = BehavioralContract(
-            domainName = "test",
+            domain = "test",
             entries = listOf(
                 ContractEntry("cancel", listOf(
                     SpanExpectation("order.cancel", mapOf(
@@ -100,7 +100,7 @@ class ContractTest {
     @Test
     fun `verify contract fails on correlation violation`() {
         val contract = BehavioralContract(
-            domainName = "test",
+            domain = "test",
             entries = listOf(
                 ContractEntry("login", listOf(
                     SpanExpectation("auth.login", mapOf(
@@ -126,7 +126,7 @@ class ContractTest {
     @Test
     fun `write and read contract round trip`() {
         val contract = BehavioralContract(
-            domainName = "roundtrip",
+            domain = "roundtrip",
             entries = listOf(
                 ContractEntry("op", listOf(
                     SpanExpectation("service.op", mapOf(
@@ -141,7 +141,7 @@ class ContractTest {
             val file = writeContract(contract, dir)
             assertTrue(file.exists())
             val loaded = readContract(file)
-            assertEquals("roundtrip", loaded.domainName)
+            assertEquals("roundtrip", loaded.domain)
             assertEquals(1, loaded.entries.size)
         } finally {
             dir.deleteRecursively()
@@ -151,7 +151,7 @@ class ContractTest {
     @Test
     fun `no matching traces produces violation`() {
         val contract = BehavioralContract(
-            domainName = "test",
+            domain = "test",
             entries = listOf(
                 ContractEntry("op", listOf(SpanExpectation("expected.span")))
             )
@@ -167,7 +167,7 @@ class ContractTest {
     @Test
     fun `correlation passes when symbols are consistent`() {
         val contract = BehavioralContract(
-            domainName = "test",
+            domain = "test",
             entries = listOf(
                 ContractEntry("login", listOf(
                     SpanExpectation("auth.login", mapOf(
@@ -191,7 +191,7 @@ class ContractTest {
 
     @Test
     fun `empty contract passes`() {
-        val contract = BehavioralContract(domainName = "test", entries = emptyList())
+        val contract = BehavioralContract(domain = "test", entries = emptyList())
         val result = verifyContract(contract, ProductionTrace(emptyList()))
         assertTrue(result.passed)
     }
