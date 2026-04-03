@@ -96,97 +96,188 @@ fun extractContract(
 }
 
 /**
- * Write a contract to a JSON file.
+ * Generate a filename-safe slug from a test name.
+ * Lowercase, spaces to hyphens, strip special chars, collapse consecutive hyphens.
  */
-fun writeContract(contract: BehavioralContract, dir: File): File {
-    val file = File(dir, "${contract.domain}.contract.json")
-    val sb = StringBuilder()
-    sb.appendLine("{")
-    sb.appendLine("""  "domain": "${contract.domain}",""")
-    sb.appendLine("""  "entries": [""")
-    contract.entries.forEachIndexed { i, entry ->
-        sb.appendLine("    {")
-        sb.appendLine("""      "testName": "${entry.testName}",""")
-        sb.appendLine("""      "spans": [""")
-        entry.spans.forEachIndexed { j, span ->
-            sb.appendLine("        {")
-            sb.appendLine("""          "name": "${span.name}"""")
-            if (span.attributes.isNotEmpty()) {
-                sb.appendLine(",")
-                sb.appendLine("""          "attributes": {""")
-                span.attributes.entries.forEachIndexed { k, (attrName, binding) ->
-                    val comma = if (k < span.attributes.size - 1) "," else ""
-                    if (binding.kind == "literal") {
-                        val valStr = when (binding.value) {
-                            is String -> "\"${binding.value}\""
-                            else -> "${binding.value}"
-                        }
-                        sb.appendLine("""            "$attrName": {"kind": "literal", "value": $valStr}$comma""")
-                    } else {
-                        sb.appendLine("""            "$attrName": {"kind": "correlated", "symbol": "${binding.symbol}"}$comma""")
-                    }
-                }
-                sb.appendLine("          }")
-            }
-            sb.appendLine("        }" + if (j < entry.spans.size - 1) "," else "")
-        }
-        sb.appendLine("      ]")
-        sb.appendLine("    }" + if (i < contract.entries.size - 1) "," else "")
-    }
-    sb.appendLine("  ]")
-    sb.appendLine("}")
-    file.writeText(sb.toString())
-    return file
+fun slugify(text: String): String {
+    return text
+        .lowercase()
+        .replace(Regex("\\s+"), "-")
+        .replace(Regex("[^a-z0-9-]"), "")
+        .replace(Regex("-{2,}"), "-")
+        .trim('-')
 }
 
 /**
- * Read a contract from a JSON file (simplified parser).
+ * Serialize an entry to a JSON string for a single contract file.
  */
-fun readContract(file: File): BehavioralContract {
-    val text = file.readText()
-    // Simplified JSON parse: extract domain and entries
-    val domainNameMatch = Regex(""""domain"\s*:\s*"([^"]+)"""").find(text)
-        ?: throw IllegalStateException("No domain in contract file")
-    val domainName = domainNameMatch.groupValues[1]
+private fun entryToJson(entry: ContractEntry): String {
+    val sb = StringBuilder()
+    sb.append("{\n")
+    sb.append("""      "testName": "${entry.testName}",""")
+    sb.append("\n")
+    sb.append("""      "spans": [""")
+    sb.append("\n")
+    entry.spans.forEachIndexed { j, span ->
+        sb.append("        {\n")
+        sb.append("""          "name": "${span.name}"""")
+        if (span.attributes.isNotEmpty()) {
+            sb.append(",\n")
+            sb.append("""          "attributes": {""")
+            sb.append("\n")
+            span.attributes.entries.forEachIndexed { k, (attrName, binding) ->
+                val comma = if (k < span.attributes.size - 1) "," else ""
+                if (binding.kind == "literal") {
+                    val valStr = when (binding.value) {
+                        is String -> "\"${binding.value}\""
+                        else -> "${binding.value}"
+                    }
+                    sb.appendLine("""            "$attrName": {"kind": "literal", "value": $valStr}$comma""")
+                } else {
+                    sb.appendLine("""            "$attrName": {"kind": "correlated", "symbol": "${binding.symbol}"}$comma""")
+                }
+            }
+            sb.append("          }\n")
+        } else {
+            sb.append("\n")
+        }
+        sb.append("        }" + if (j < entry.spans.size - 1) "," else "")
+        sb.append("\n")
+    }
+    sb.append("      ]\n")
+    sb.append("    }")
+    return sb.toString()
+}
 
-    val entries = mutableListOf<ContractEntry>()
-    val entryPattern = Regex(""""testName"\s*:\s*"([^"]+)"""")
+/**
+ * Write contract entries as individual JSON files.
+ * Creates one {slug}.contract.json per entry under dir/{domain}/.
+ * Returns list of written file paths.
+ */
+fun writeContract(contract: BehavioralContract, dir: File): List<File> {
+    val domainDir = File(dir, contract.domain)
+    domainDir.mkdirs()
+
+    val now = java.time.Instant.now().toString()
+    val paths = mutableListOf<File>()
+
+    for (entry in contract.entries) {
+        val slug = slugify(entry.testName)
+        val file = File(domainDir, "$slug.contract.json")
+
+        val sb = StringBuilder()
+        sb.appendLine("{")
+        sb.appendLine("""  "version": 1,""")
+        sb.appendLine("""  "domain": "${contract.domain}",""")
+        sb.appendLine("""  "testName": "${entry.testName}",""")
+        sb.appendLine("""  "extractedAt": "$now",""")
+        sb.append("""  "entry": """)
+        sb.appendLine(entryToJson(entry))
+        sb.appendLine("}")
+        file.writeText(sb.toString())
+        paths.add(file)
+    }
+
+    return paths
+}
+
+/**
+ * Read a single contract file and return its domain and entry.
+ */
+fun readContractFile(file: File): Pair<String, ContractEntry> {
+    val text = file.readText()
+
+    val versionMatch = Regex(""""version"\s*:\s*(\d+)""").find(text)
+    val version = versionMatch?.groupValues?.get(1)?.toIntOrNull()
+    if (version != 1) {
+        throw IllegalStateException("Unsupported contract version $version in ${file.path}")
+    }
+
+    val domainMatch = Regex(""""domain"\s*:\s*"([^"]+)"""").find(text)
+        ?: throw IllegalStateException("Missing domain in contract file ${file.path}")
+    val domain = domainMatch.groupValues[1]
+
+    // Find the "entry" block - everything after "entry": { ... }
+    val entryStart = text.indexOf("\"entry\"")
+    if (entryStart < 0) throw IllegalStateException("Missing entry in contract file ${file.path}")
+
+    val entryText = text.substring(entryStart)
+
+    val testNameMatch = Regex(""""testName"\s*:\s*"([^"]+)"""").find(entryText)
+        ?: throw IllegalStateException("Missing entry.testName in contract file ${file.path}")
+    val testName = testNameMatch.groupValues[1]
+
     val spanPattern = Regex(""""name"\s*:\s*"([^"]+)"""")
     val literalPattern = Regex(""""(\w[\w.]*?)"\s*:\s*\{\s*"kind"\s*:\s*"literal"\s*,\s*"value"\s*:\s*("([^"]*)"|([\d.]+))\s*\}""")
     val correlatedPattern = Regex(""""(\w[\w.]*?)"\s*:\s*\{\s*"kind"\s*:\s*"correlated"\s*,\s*"symbol"\s*:\s*"([^"]+)"\s*\}""")
 
-    // Split by entry blocks
-    val entryBlocks = text.split(""""testName"""").drop(1)
-    for (block in entryBlocks) {
-        val opMatch = Regex(""":\s*"([^"]+)"""").find(block) ?: continue
-        val opName = opMatch.groupValues[1]
+    val spanNames = spanPattern.findAll(entryText).map { it.groupValues[1] }.toList()
 
-        val spanMatches = spanPattern.findAll(block).toList()
-        // Skip the first match if it matches the operation name itself - get span names from "spans" blocks
-        val spanNames = spanMatches.map { it.groupValues[1] }
-
-        val spans = spanNames.map { spanName ->
-            val attrs = mutableMapOf<String, AttributeBinding>()
-            literalPattern.findAll(block).forEach { m ->
-                val attrName = m.groupValues[1]
-                if (attrName != "kind") {
-                    val strVal = m.groupValues[3]
-                    val numVal = m.groupValues[4]
-                    val value: Any = if (strVal.isNotEmpty()) strVal
-                    else numVal.toDoubleOrNull()?.let { if (it == it.toLong().toDouble()) it.toLong() else it } ?: numVal
-                    attrs[attrName] = AttributeBinding(kind = "literal", value = value)
-                }
+    val spans = spanNames.map { spanName ->
+        val attrs = mutableMapOf<String, AttributeBinding>()
+        literalPattern.findAll(entryText).forEach { m ->
+            val attrName = m.groupValues[1]
+            if (attrName != "kind") {
+                val strVal = m.groupValues[3]
+                val numVal = m.groupValues[4]
+                val value: Any = if (strVal.isNotEmpty()) strVal
+                else numVal.toDoubleOrNull()?.let { if (it == it.toLong().toDouble()) it.toLong() else it } ?: numVal
+                attrs[attrName] = AttributeBinding(kind = "literal", value = value)
             }
-            correlatedPattern.findAll(block).forEach { m ->
-                val attrName = m.groupValues[1]
-                attrs[attrName] = AttributeBinding(kind = "correlated", symbol = m.groupValues[2])
-            }
-            SpanExpectation(name = spanName, attributes = attrs)
         }
-        entries.add(ContractEntry(testName = opName, spans = spans))
+        correlatedPattern.findAll(entryText).forEach { m ->
+            val attrName = m.groupValues[1]
+            attrs[attrName] = AttributeBinding(kind = "correlated", symbol = m.groupValues[2])
+        }
+        SpanExpectation(name = spanName, attributes = attrs)
     }
 
-    return BehavioralContract(domain = domainName, entries = entries)
+    return Pair(domain, ContractEntry(testName = testName, spans = spans))
+}
+
+/**
+ * Read all contract files from baseDir, grouped by domain.
+ * Scans baseDir/{domain}/ for .contract.json files and reconstructs BehavioralContracts.
+ */
+fun readContract(baseDir: File): BehavioralContract {
+    val domainMap = mutableMapOf<String, MutableList<ContractEntry>>()
+
+    if (!baseDir.exists()) {
+        return BehavioralContract(domain = "", entries = emptyList())
+    }
+
+    val subdirs = baseDir.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
+    for (subdir in subdirs) {
+        val files = subdir.listFiles()?.filter { it.name.endsWith(".contract.json") }?.sortedBy { it.name } ?: continue
+        for (file in files) {
+            val (domain, entry) = readContractFile(file)
+            domainMap.getOrPut(domain) { mutableListOf() }.add(entry)
+        }
+    }
+
+    // Return the first (and typically only) domain's contract
+    val firstDomain = domainMap.keys.firstOrNull() ?: return BehavioralContract(domain = "", entries = emptyList())
+    return BehavioralContract(domain = firstDomain, entries = domainMap[firstDomain]!!)
+}
+
+/**
+ * Read all contract files from baseDir, returning all domains.
+ */
+fun readContracts(baseDir: File): List<BehavioralContract> {
+    if (!baseDir.exists()) return emptyList()
+
+    val domainMap = mutableMapOf<String, MutableList<ContractEntry>>()
+
+    val subdirs = baseDir.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
+    for (subdir in subdirs) {
+        val files = subdir.listFiles()?.filter { it.name.endsWith(".contract.json") }?.sortedBy { it.name } ?: continue
+        for (file in files) {
+            val (domain, entry) = readContractFile(file)
+            domainMap.getOrPut(domain) { mutableListOf() }.add(entry)
+        }
+    }
+
+    return domainMap.map { (domain, entries) -> BehavioralContract(domain = domain, entries = entries) }
 }
 
 /**

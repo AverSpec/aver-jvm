@@ -37,7 +37,7 @@ class AverWorkbench {
     var contractCollector: InMemoryCollector? = null
     var contractDomainSpec: ContractDomainSpecPayload? = null
     var contractResult: ConformanceReport? = null
-    var contractWrittenFile: File? = null
+    var contractWrittenFiles: List<File>? = null
 }
 
 /**
@@ -337,12 +337,13 @@ fun buildAverCoreAdapter(): Adapter {
         val spec = wb.contractDomainSpec!!
         val contract = extractContract(d.name, ctx.trace(), collector, spec.parameterized)
         val dir = wb.contractTmpDir ?: throw RuntimeException("No tmp dir")
-        wb.contractWrittenFile = writeContract(contract, dir)
+        wb.contractWrittenFiles = writeContract(contract, dir)
     }
 
     handlers["load and verify contract"] = { wb: AverWorkbench, traceSpec: ContractTraceSpecPayload ->
-        val file = wb.contractWrittenFile ?: throw RuntimeException("No contract written")
-        val contract = readContract(file)
+        val files = wb.contractWrittenFiles ?: throw RuntimeException("No contract written")
+        val dir = wb.contractTmpDir ?: throw RuntimeException("No tmp dir")
+        val contract = readContract(dir)
         val prodSpans = traceSpec.spans.map { spanMap ->
             val name = spanMap["name"] as String
             @Suppress("UNCHECKED_CAST")

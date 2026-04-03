@@ -138,11 +138,50 @@ class ContractTest {
         @Suppress("DEPRECATION")
         val dir = kotlin.io.createTempDir("aver-contract-test-")
         try {
-            val file = writeContract(contract, dir)
-            assertTrue(file.exists())
-            val loaded = readContract(file)
+            val files = writeContract(contract, dir)
+            assertEquals(1, files.size)
+            assertTrue(files[0].exists())
+            assertTrue(files[0].path.endsWith("roundtrip/op.contract.json"))
+            val loaded = readContract(dir)
             assertEquals("roundtrip", loaded.domain)
             assertEquals(1, loaded.entries.size)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `slugify generates correct slugs`() {
+        assertEquals("create-a-task", slugify("create a task"))
+        assertEquals("hello-world", slugify("Hello World"))
+        assertEquals("test-123", slugify("test 123"))
+        assertEquals("no-special-chars", slugify("no special chars!@#"))
+        assertEquals("collapse-hyphens", slugify("collapse   hyphens"))
+        assertEquals("trim-edges", slugify(" trim edges "))
+    }
+
+    @Test
+    fun `write creates per-entry files`() {
+        val contract = BehavioralContract(
+            domain = "task-board",
+            entries = listOf(
+                ContractEntry("create a task", listOf(SpanExpectation("task.create"))),
+                ContractEntry("delete a task", listOf(SpanExpectation("task.delete")))
+            )
+        )
+        @Suppress("DEPRECATION")
+        val dir = kotlin.io.createTempDir("aver-contract-test-")
+        try {
+            val files = writeContract(contract, dir)
+            assertEquals(2, files.size)
+            assertTrue(files[0].name == "create-a-task.contract.json")
+            assertTrue(files[1].name == "delete-a-task.contract.json")
+            // Verify file content has standard structure
+            val text = files[0].readText()
+            assertTrue(text.contains("\"version\": 1"))
+            assertTrue(text.contains("\"domain\": \"task-board\""))
+            assertTrue(text.contains("\"testName\": \"create a task\""))
+            assertTrue(text.contains("\"entry\":"))
         } finally {
             dir.deleteRecursively()
         }
